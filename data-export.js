@@ -195,7 +195,6 @@ const getAnalyticsData = etlAnalyticsUrl => {
             console.log('Analytics status OK. ' + res.statusCode);
             resolve(responseBody ? responseBody : {});
         } else {
-          // console.log('Analytics status is empty. ERROR ' + res.statusCode);
           reject(err);
         }
       }
@@ -212,7 +211,6 @@ const importData = async (etlAnalyticsUrl, callback) => {
       try {
         const importResult = await dataValueImport(dataValues);
         console.log(importResult);
-        // callback(null, importResult);
       } catch (error) {
         console.log('Data import not successful.');
         callback(error, null)
@@ -299,7 +297,6 @@ const updateAnalytics = async (param, callback) => {
 
 const runAnalytics = () => {
   console.log('Running Analytics...');
-  // var dataString = 'lastYears=1';
   var dataString = '';
   return new Promise((resolve, reject) => {
     request(
@@ -314,7 +311,6 @@ const runAnalytics = () => {
             console.log('Running Analytics status OK. ' + res.statusCode);
             resolve(responseBody ? responseBody : {});
         } else {
-          // console.log('Analytics status is empty. ERROR ' + res.statusCode);
           reject(err);
         }
       }
@@ -346,7 +342,6 @@ const runMaintenance = () => {
             console.log('Running Maintenance status OK. ' + res.statusCode);
             resolve(responseBody ? responseBody : {});
         } else {
-          // console.log('Analytics status is empty. ERROR ' + res.statusCode);
           reject(err);
         }
       }
