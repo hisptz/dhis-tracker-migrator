@@ -142,7 +142,7 @@ function processAnalyticsParams() {
 const fetchAnalyticsData = async () => {
   const analyticsUrl = (analyticsParams || []).map(param => {
     return tBinstanceLink + "analytics/dataValueSet.json?dimension=dx:" + param.progIndicator + ""+
-    "&dimension=pe:" + param.pe + "&dimension=ou:" + param.ou + ";LEVEL-5&displayProperty=NAME";
+    "&dimension=pe:" + param.pe + "&dimension=ou:" + param.ou + ";LEVEL-" + orgunitLevel + "&displayProperty=NAME";
   });
 
   var importedData;
