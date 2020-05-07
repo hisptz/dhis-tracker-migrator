@@ -25,7 +25,7 @@ const dataElementGroup = {name: '', id: ''};
 const orgunitLevelUrl = tBinstanceLink + "organisationUnits.json?paging=false&fields=id,name,level&filter=level:eq:" + orgunitLevel;
 const programInfoUrl = tBinstanceLink + "programs/"+ program.id +".json?fields=id,name,programIndicators";
 const programIndicatorGroupUrl = tBinstanceLink + "programIndicatorGroups/"+ programIndicatorGroup.id +".json?fields=id,name,programIndicators[id,name]";
-const dataElementGroupUrl = tBinstanceLink + "dataElementGroups/"+ dataElementGroup +".json?fields=id,name,dataElements[id,name]";
+const dataElementGroupUrl = tBinstanceLink + "dataElementGroups/"+ dataElementGroup.id +".json?fields=id,name,dataElements[id,name]";
 const datavalueImportUrl = tBinstanceLink + "dataValueSets.json";
 const runAnalyticsUrl = tBinstanceLink + "resourceTables/analytics";
 const runMaintenanceUrl = tBinstanceLink + "maintenance";
@@ -132,7 +132,6 @@ function processAnalyticsParams() {
           pe: getYearMonths(pe)
         })
       });
-      
     });
   });
   fetchAnalyticsData();
@@ -206,18 +205,19 @@ const getAnalyticsData = etlAnalyticsUrl => {
 const importData = async (etlAnalyticsUrl, callback) => {
   try {
     const anaLyticsDataValues = await getAnalyticsData(etlAnalyticsUrl);
-    const dataValues = progIndicatorDataElementConverter(anaLyticsDataValues);
-    if (dataValues.dataValues.length > 0) {
-      try {
-        const importResult = await dataValueImport(dataValues);
-        console.log(importResult);
-      } catch (error) {
-        console.log('Data import not successful.');
-        callback(error, null)
+    if (Object.keys(anaLyticsDataValues)) {
+      const dataValues = progIndicatorDataElementConverter(anaLyticsDataValues);
+      if (dataValues.dataValues.length > 0) {
+        try {
+          const importResult = await dataValueImport(dataValues);
+          console.log(importResult);
+        } catch (error) {
+          console.log('Data import not successful.');
+          callback(error, null)
+        }
+      } else {
+        callback(null, dataValues);
       }
-      
-    } else {
-      callback(null, dataValues);
     }
   } catch (e) {
     callback(e, null);
