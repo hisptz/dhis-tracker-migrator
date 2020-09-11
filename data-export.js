@@ -40,19 +40,19 @@ https.get((orgunitLevelUrl), (resp) => {
   resp.on('end', () => {
     console.log('Processing data results...');
     var responseData = JSON.parse(data);
-    // orgunits = responseData.organisationUnits ? responseData.organisationUnits : [];
-    orgunits = [
-      { level: 3, name: 'Dodoma Region', id: 'Cpd5l15XxwA' },
-      { level: 3, name: 'Geita Region', id: 'MAL4cfZoFhJ' },
-      { level: 3, name: 'Iringa Region', id: 'sWOWPBvwNY2' },
-      { level: 3, name: 'Kagera Region', id: 'Crkg9BoUo5w' },
-      { level: 3, name: 'Katavi Region', id: 'DWSo42hunXH' },
-      { level: 3, name: 'Kigoma Region', id: 'RD96nI1JXVV' },
-      { level: 3, name: 'Kilimanjaro Region', id: 'lnOyHhoLzre' },
-      { level: 3, name: 'Lindi Region', id: 'VMgrQWSVIYn' },
-      { level: 3, name: 'Manyara Region', id: 'qg5ySBw9X5l' },
-      { level: 3, name: 'Mara Region', id: 'vYT08q7Wo33' }
-    ];
+    orgunits = responseData.organisationUnits ? responseData.organisationUnits : [];
+    // orgunits = [
+    //   { level: 3, name: 'Dodoma Region', id: 'Cpd5l15XxwA' },
+    //   { level: 3, name: 'Geita Region', id: 'MAL4cfZoFhJ' },
+    //   { level: 3, name: 'Iringa Region', id: 'sWOWPBvwNY2' },
+    //   { level: 3, name: 'Kagera Region', id: 'Crkg9BoUo5w' },
+    //   { level: 3, name: 'Katavi Region', id: 'DWSo42hunXH' },
+    //   { level: 3, name: 'Kigoma Region', id: 'RD96nI1JXVV' },
+    //   { level: 3, name: 'Kilimanjaro Region', id: 'lnOyHhoLzre' },
+    //   { level: 3, name: 'Lindi Region', id: 'VMgrQWSVIYn' },
+    //   { level: 3, name: 'Manyara Region', id: 'qg5ySBw9X5l' },
+    //   { level: 3, name: 'Mara Region', id: 'vYT08q7Wo33' }
+    // ];
     console.log(orgunits);
         // Now fetch program info from group
         fetchProgramInfo();
