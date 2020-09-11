@@ -10,31 +10,24 @@ const https = require('https');
 const request = require("request");
 const async = require('async');
 
-const username = "username";
-const password = "password";
+const username = "ibrahimwickama";
+const password = "ibrahim@hispTz1";
 const basicAuth = "https://" + username + ":" + password + "@";
-const instanceUrl = "etl.moh.go.tz/tracker/api/";
-const tBinstanceLink = basicAuth + instanceUrl;
+const tBinstanceLink = basicAuth + "etl.moh.go.tz/tracker/api/";
 const orgunitLevel = 5;
-const selectedYears = [2019, 2018, 2017];
-
-const program = {name: '', id: ''};
-const programIndicatorGroup = {name: '', id: ''};
-const dataElementGroup = {name: '', id: ''};
-
-const orgunitLevelUrl = tBinstanceLink + "organisationUnits.json?paging=false&fields=id,name,level&filter=level:eq:" + orgunitLevel;
-const programInfoUrl = tBinstanceLink + "programs/"+ program.id +".json?fields=id,name,programIndicators";
-const programIndicatorGroupUrl = tBinstanceLink + "programIndicatorGroups/"+ programIndicatorGroup.id +".json?fields=id,name,programIndicators[id,name]";
-const dataElementGroupUrl = tBinstanceLink + "dataElementGroups/"+ dataElementGroup.id +".json?fields=id,name,dataElements[id,name]";
-const datavalueImportUrl = tBinstanceLink + "dataValueSets.json";
-const runAnalyticsUrl = tBinstanceLink + "resourceTables/analytics";
-const runMaintenanceUrl = tBinstanceLink + "maintenance";
-
+const selectedYears = [2020, 2019, 2018, 2017];
 var dataElements = [];
 var programIndicators = [];
 var orgunits = [];
 var analyticsParams = [];
 var programInfo = {};
+const orgunitLevelUrl = tBinstanceLink + "organisationUnits.json?paging=false&fields=id,name,level&filter=level:eq:3";
+const programInfoUrl = tBinstanceLink + "programs/nvz0bEfZ5rj.json?fields=id,name,programIndicators";
+const programIndicatorGroupUrl = tBinstanceLink + "programIndicatorGroups/zR0bqwKXgda.json?fields=id,name,programIndicators[id,name]";
+const dataElementGroupUrl = tBinstanceLink + "dataElementGroups/IViQ32rQcso.json?fields=id,name,dataElements[id,name]";
+const datavalueImportUrl = tBinstanceLink + "dataValueSets.json";
+const runAnalyticsUrl = tBinstanceLink + "resourceTables/analytics";
+const runMaintenanceUrl = tBinstanceLink + "maintenance";
 
 console.log('Fetching Organisation Units Level ' + orgunitLevelUrl.slice(-1) + ' from server...');
 https.get((orgunitLevelUrl), (resp) => {
@@ -47,7 +40,20 @@ https.get((orgunitLevelUrl), (resp) => {
   resp.on('end', () => {
     console.log('Processing data results...');
     var responseData = JSON.parse(data);
-    orgunits = responseData.organisationUnits ? responseData.organisationUnits : [];
+    // orgunits = responseData.organisationUnits ? responseData.organisationUnits : [];
+    orgunits = [
+      { level: 3, name: 'Dodoma Region', id: 'Cpd5l15XxwA' },
+      { level: 3, name: 'Geita Region', id: 'MAL4cfZoFhJ' },
+      { level: 3, name: 'Iringa Region', id: 'sWOWPBvwNY2' },
+      { level: 3, name: 'Kagera Region', id: 'Crkg9BoUo5w' },
+      { level: 3, name: 'Katavi Region', id: 'DWSo42hunXH' },
+      { level: 3, name: 'Kigoma Region', id: 'RD96nI1JXVV' },
+      { level: 3, name: 'Kilimanjaro Region', id: 'lnOyHhoLzre' },
+      { level: 3, name: 'Lindi Region', id: 'VMgrQWSVIYn' },
+      { level: 3, name: 'Manyara Region', id: 'qg5ySBw9X5l' },
+      { level: 3, name: 'Mara Region', id: 'vYT08q7Wo33' }
+    ];
+    console.log(orgunits);
         // Now fetch program info from group
         fetchProgramInfo();
   });
@@ -123,7 +129,8 @@ https.get((dataElementGroupUrl), (resp) => {
 }
 
 function processAnalyticsParams() {
-  (orgunits || []).forEach(ou => {
+  const customOrgunits = orgunits;
+  (customOrgunits || []).forEach(ou => {
     (programIndicators || []).forEach(de => {
       selectedYears.forEach(pe => {
         analyticsParams.push({
@@ -135,15 +142,15 @@ function processAnalyticsParams() {
     });
   });
   fetchAnalyticsData();
+  //executeAnalytics();
 }
 
 
 const fetchAnalyticsData = async () => {
   const analyticsUrl = (analyticsParams || []).map(param => {
-    return tBinstanceLink + "analytics/dataValueSet.json?dimension=dx:" + param.progIndicator + ""+
-    "&dimension=pe:" + param.pe + "&dimension=ou:" + param.ou + ";LEVEL-" + orgunitLevel + "&displayProperty=NAME";
+    return tBinstanceLink + "analytics.json?dimension=dx:" + param.progIndicator + ""+
+    "&dimension=pe:" + param.pe + "&dimension=ou:" + param.ou + ";LEVEL-5&displayProperty=NAME";
   });
-
   var importedData;
   importedData = await new Promise((resolve, reject) => {
     async.mapLimit(
@@ -165,20 +172,33 @@ const fetchAnalyticsData = async () => {
 }
 
 function progIndicatorDataElementConverter(analytics) {
-    (analytics.dataValues || []).forEach(dataValue => {
-        var filteredProgIndicator = programIndicators.filter(progInd => progInd.id === dataValue.dataElement);
-        var actualProgIndicator = filteredProgIndicator[0] ? filteredProgIndicator[0] : {};
-        var filteredDataElement = dataElements.filter(de => de.name === actualProgIndicator.name);
-        var actualDataElement = filteredDataElement[0] ? filteredDataElement[0] : {};
-            if (dataValue.dataElement === actualProgIndicator.id && actualDataElement.name === actualProgIndicator.name) {
-                dataValue.dataElement = actualDataElement.id;
-                delete dataValue.storedBy;
-                delete dataValue.created;
-                delete dataValue.lastUpdated;
-                delete dataValue.comment;
-            }
+  const dataValuesPayload = { dataValues: [] };
+  const valueIndex = analytics.headers.findIndex(head => head.name === 'value');
+  const dxIndex = analytics.headers.findIndex(head => head.name === 'dx');
+  const ouIndex = analytics.headers.findIndex(head => head.name === 'ou');
+  const peIndex = analytics.headers.findIndex(head => head.name === 'pe');
+
+  if (analytics.rows.length) {
+    dataValuesPayload.dataValues = (analytics.rows || []).map(row => {
+      return {
+        dataElement: row[dxIndex],
+        period: row[peIndex],
+        orgUnit: row[ouIndex],
+        value: parseFloat( row[valueIndex] ) ? parseFloat( row[valueIndex] ) : 0
+      }
     });
-  return analytics;
+
+    (dataValuesPayload.dataValues || []).forEach(dataValue => {
+      var filteredProgIndicator = programIndicators.filter(progInd => progInd.id === dataValue.dataElement);
+      var actualProgIndicator = filteredProgIndicator[0] ? filteredProgIndicator[0] : {};
+      var filteredDataElement = dataElements.filter(de => de.name === actualProgIndicator.name);
+      var actualDataElement = filteredDataElement[0] ? filteredDataElement[0] : {};
+        if (dataValue.dataElement === actualProgIndicator.id && actualDataElement.name === actualProgIndicator.name) {
+          dataValue.dataElement = actualDataElement.id;
+        }
+    });
+  }  
+  return dataValuesPayload;
 }
 
 const getAnalyticsData = etlAnalyticsUrl => {
@@ -194,6 +214,7 @@ const getAnalyticsData = etlAnalyticsUrl => {
             console.log('Analytics status OK. ' + res.statusCode);
             resolve(responseBody ? responseBody : {});
         } else {
+          // console.log('Analytics status is empty. ERROR ' + res.statusCode);
           reject(err);
         }
       }
@@ -238,16 +259,22 @@ const dataValueImport = dataValues => {
         if (!err) {
           try {
             const responseBody = Object.keys(body) ? body : JSON.parse(body);
-
+            // if(responseBody.importCount.ignored) {
+            //   console.log(responseBody);
+            // }
+            
             const result = responseBody
               ? {
                   imported: responseBody.importCount
-                    ? (responseBody.importCount.updated || 0) +
-                      (responseBody.importCount.imported || 0)
+                    ? (responseBody.importCount.imported || 0)
                     : 0,
+                  updated: responseBody.importCount
+                  ? (responseBody.importCount.updated || 0)
+                  : 0,
                   ignored: responseBody.importCount
                     ? responseBody.importCount.ignored || 0
-                    : 0
+                    : 0,
+                  description: responseBody.description
                 }
               : null;
             resolve(result);
@@ -261,7 +288,6 @@ const dataValueImport = dataValues => {
     );
   });
 };
-
 
 const executeAnalytics = async () => {
   console.log('Triggering Analytics run-time for ETL');
@@ -297,6 +323,7 @@ const updateAnalytics = async (param, callback) => {
 
 const runAnalytics = () => {
   console.log('Running Analytics...');
+  // var dataString = 'lastYears=1';
   var dataString = '';
   return new Promise((resolve, reject) => {
     request(
@@ -311,6 +338,7 @@ const runAnalytics = () => {
             console.log('Running Analytics status OK. ' + res.statusCode);
             resolve(responseBody ? responseBody : {});
         } else {
+          // console.log('Analytics status is empty. ERROR ' + res.statusCode);
           reject(err);
         }
       }
@@ -342,6 +370,7 @@ const runMaintenance = () => {
             console.log('Running Maintenance status OK. ' + res.statusCode);
             resolve(responseBody ? responseBody : {});
         } else {
+          // console.log('Analytics status is empty. ERROR ' + res.statusCode);
           reject(err);
         }
       }
@@ -365,3 +394,4 @@ function sanitizeIndicators(indicators) {
   }).join(";");
   return analyticsDeString;
 }
+
