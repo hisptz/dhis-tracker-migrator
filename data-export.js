@@ -6,14 +6,14 @@
 // Thats it for installation, finally run 
 // --> node data-export.js
 
-const https = require('https');
+const https = require('http');
 const request = require("request");
 const async = require('async');
 
 const username = "ibrahimwickama";
 const password = "ibrahim@hispTz1";
-const basicAuth = "https://" + username + ":" + password + "@";
-const tBinstanceLink = basicAuth + "etl.moh.go.tz/tracker/api/";
+const basicAuth = "http://" + username + ":" + password + "@";
+const tBinstanceLink = basicAuth + "10.60.84.17:8083/tracker/api/";
 const orgunitLevel = 5;
 const selectedYears = [2020, 2019, 2018, 2017];
 var dataElements = [];
@@ -41,19 +41,6 @@ https.get((orgunitLevelUrl), (resp) => {
     console.log('Processing data results...');
     var responseData = JSON.parse(data);
     orgunits = responseData.organisationUnits ? responseData.organisationUnits : [];
-    // orgunits = [
-    //   { level: 3, name: 'Dodoma Region', id: 'Cpd5l15XxwA' },
-    //   { level: 3, name: 'Geita Region', id: 'MAL4cfZoFhJ' },
-    //   { level: 3, name: 'Iringa Region', id: 'sWOWPBvwNY2' },
-    //   { level: 3, name: 'Kagera Region', id: 'Crkg9BoUo5w' },
-    //   { level: 3, name: 'Katavi Region', id: 'DWSo42hunXH' },
-    //   { level: 3, name: 'Kigoma Region', id: 'RD96nI1JXVV' },
-    //   { level: 3, name: 'Kilimanjaro Region', id: 'lnOyHhoLzre' },
-    //   { level: 3, name: 'Lindi Region', id: 'VMgrQWSVIYn' },
-    //   { level: 3, name: 'Manyara Region', id: 'qg5ySBw9X5l' },
-    //   { level: 3, name: 'Mara Region', id: 'vYT08q7Wo33' }
-    // ];
-    console.log(orgunits);
         // Now fetch program info from group
         fetchProgramInfo();
   });
@@ -128,26 +115,22 @@ https.get((dataElementGroupUrl), (resp) => {
 });
 }
 
-function processAnalyticsParams() {
-  const customOrgunits = orgunits;
-  (customOrgunits || []).forEach(ou => {
+
+
+
+const fetchAnalyticsData = async (ou) => {
+    console.log('***********  Started importing data for ' + ou.name);
+    const customParams = [];
     (programIndicators || []).forEach(de => {
-      selectedYears.forEach(pe => {
-        analyticsParams.push({
-          ou: ou.id ? ou.id : '',
-          progIndicator: de.id,
-          pe: getYearMonths(pe)
-        })
+        selectedYears.forEach(pe => {
+            customParams.push({
+            ou: ou.id ? ou.id : '',
+            progIndicator: de.id,
+            pe: getYearMonths(pe)
+          })
+        });
       });
-    });
-  });
-  fetchAnalyticsData();
-  //executeAnalytics();
-}
-
-
-const fetchAnalyticsData = async () => {
-  const analyticsUrl = (analyticsParams || []).map(param => {
+  const analyticsUrl = (customParams || []).map(param => {
     return tBinstanceLink + "analytics.json?dimension=dx:" + param.progIndicator + ""+
     "&dimension=pe:" + param.pe + "&dimension=ou:" + param.ou + ";LEVEL-5&displayProperty=NAME";
   });
@@ -164,12 +147,30 @@ const fetchAnalyticsData = async () => {
   });
 
   return new Promise((resolve, reject) => {
-    console.log('Finished importing data.');
-    console.log('*********** THE END (1/2) ************');
-    executeAnalytics();
+    console.log('***********  Finished importing data for ' + ou.name);
     resolve(importedData);
   });
 }
+
+const processAnalyticsParams = async () => {
+  var computeOrgunit;
+  computeOrgunit = await new Promise((resolve, reject) => {
+    async.mapLimit(
+      orgunits,
+      1,
+      async.reflect(fetchAnalyticsData),
+      (err, result) => {
+        resolve(result);
+      }
+    );
+  });
+  return new Promise((resolve, reject) => {
+    console.log('Finished importing data per orgunit');
+    executeAnalytics();
+    resolve(computeOrgunit);
+  });
+}
+
 
 function progIndicatorDataElementConverter(analytics) {
   const dataValuesPayload = { dataValues: [] };
@@ -211,7 +212,7 @@ const getAnalyticsData = etlAnalyticsUrl => {
       (err, res) => {
         if (!err && res.statusCode == 200) {
           const responseBody = JSON.parse(res.body);
-            console.log('Analytics status OK. ' + res.statusCode);
+            // console.log('Analytics status OK. ' + res.statusCode);
             resolve(responseBody ? responseBody : {});
         } else {
           // console.log('Analytics status is empty. ERROR ' + res.statusCode);
@@ -394,4 +395,3 @@ function sanitizeIndicators(indicators) {
   }).join(";");
   return analyticsDeString;
 }
-
